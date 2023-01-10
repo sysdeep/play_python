@@ -1,11 +1,11 @@
-from app.tree import Tree
+from app.storage.tree import Tree
+from app.storage.sequence_writer import SequenceWriter
 
 
 def test_append_one():
     tree = Tree()
-    worker = tree.get_write_worker()
+    worker = SequenceWriter(tree)
 
     res = worker.append(1)
 
-    assert res.is_eop == True
-
+    assert res.is_eop

@@ -1,4 +1,6 @@
-from app.tree import Tree
+from app.storage.tree import Tree
+from app.storage.sequence_reader import SequenceReader
+from app.storage.sequence_writer import SequenceWriter
 
 
 class Container:
@@ -7,11 +9,10 @@ class Container:
         self._tree = tree
         self._seq = []
 
-
     def pack_data(self, data: bytes):
 
         self._seq = []
-        worker = self._tree.get_write_worker()
+        worker = SequenceWriter(self._tree)
 
         last_result = None
         for b in data:
@@ -21,15 +22,12 @@ class Container:
 
             last_result = res
 
-        # если закончили, и последняя операция - не вставка новой ноды, фиксируем id ноды        
-        if last_result.is_eop is False:
+        # если закончили, и последняя операция - не вставка новой ноды, фиксируем id ноды
+        if last_result and last_result.is_eop is False:
             self._seq.append(last_result.node_id)
 
-
-
-
     def unpack_data(self) -> bytes:
-        worker = self._tree.get_read_worker()
+        worker = SequenceReader(self._tree)
 
         result = b''
         for node_id in self._seq:

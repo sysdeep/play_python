@@ -1,8 +1,7 @@
 import pytest
 
 from app.container import Container
-from app.tree import Tree
-
+from app.storage.tree import Tree
 
 
 @pytest.mark.parametrize('dataset', (
@@ -11,10 +10,9 @@ from app.tree import Tree
     b'13',
     b'Hello',
     b'Hello world',
-    ))
+))
 def test_container_simple(dataset):
 
-    
     t = Tree()
     c = Container(t)
 
