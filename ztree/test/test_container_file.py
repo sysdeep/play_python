@@ -1,15 +1,14 @@
-import hashlib
+# import hashlib
 import os.path
 
 from app.container_file import ContainerFile
 from app.storage.tree import Tree
-import pytest
 
 
 def test_container_file():
 
     self_path = os.path.abspath(__file__)
-    unpack_path = '/tmp/test_file'
+    # unpack_path = '/tmp/test_file'
 
     t = Tree()
     c = ContainerFile(t)
