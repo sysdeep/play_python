@@ -1,0 +1,17 @@
+
+
+# https://docs.astral.sh/ruff/configuration/
+[tool.ruff]
+
+# Same as Black.
+line-length = 120
+indent-width = 4
+
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+
+# [tool.ruff.lint]
+# select = ["ALL"]
