@@ -3,7 +3,9 @@ from tkinter import ttk
 
 from docker import DockerClient
 
-from .page_images import PageImages
+from app.ui.page_images.page_images import PageImages
+
+# from .page_images import PageImages
 from .page_containers import PageContainers
 
 

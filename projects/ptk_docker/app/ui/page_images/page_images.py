@@ -1,9 +1,10 @@
+import pprint
 import tkinter as tk
 from tkinter import ttk
 
-import pprint
-
 from docker import DockerClient
+
+from app.ui.page_images.images_list_frame import ImagesListFrame
 
 
 class PageImages(tk.Frame):
@@ -15,6 +16,9 @@ class PageImages(tk.Frame):
         tk.Label(self, text="hello").pack()
 
         # tree
+        self._tree_frame = ImagesListFrame(self)
+        self._tree_frame.pack(expand=True, fill="both")
+
         tree_columns = [
             "tag",
             "size",
