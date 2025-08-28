@@ -1,4 +1,5 @@
 import tkinter as tk
+from abc import ABC, abstractmethod
 from enum import Enum
 from tkinter import ttk
 from typing import Callable
@@ -15,11 +16,22 @@ class Column(Enum):
     size = "size"
 
 
+class ImagesListHandler(ABC):
+
+    @abstractmethod
+    def remove_image(self, uid: str, force: bool):
+        pass
+
+    @abstractmethod
+    def show_image_info(self, uid: str):
+        pass
+
+
 class ImagesListFrame(tk.Frame):
-    def __init__(self, master, on_remove: Callable[[str, bool], None], *args, **kwargs):
+    def __init__(self, master, handler: ImagesListHandler, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
-        self._on_remove = on_remove
+        self._handler = handler
 
         tree_columns: list[Column] = [
             Column.repository,
@@ -52,8 +64,12 @@ class ImagesListFrame(tk.Frame):
 
         # self._tree.column("#0", width=300)
         # self._tree.tag_bind("simple", "<<TreeviewSelect>>", self._select_row)
-        # self._tree.bind("<Double-1>", self._open_row)
+        self._tree.bind("<Double-1>", self._open_row)
+        self._tree.bind("<Return>", self._open_row)
         # self._tree.tag_bind("simple", "<<TreeviewOpen>>", self.__open_row)
+
+        self._tree.bind("<d>", lambda *_: self._show_remove())
+        self._tree.bind("<D>", lambda *_: self._show_remove_force())
 
         # menu --------------------------------------------
         self._tree.bind("<Button-3>", self._make_cmenu)
@@ -72,8 +88,17 @@ class ImagesListFrame(tk.Frame):
             # image=ticons.ticon(ticons.TRASH),
             # compound="left",
         )
+        self.cmenu.add_command(
+            label="Удалить FORCE",
+            command=self._show_remove_force,
+            # image=ticons.ticon(ticons.TRASH),
+            # compound="left",
+        )
 
         self._rows_map = {}  # row_id: image_id
+
+        # start ---------------------------------------------------------------
+        self._tree.focus_set()
 
     def set_images(self, images: list[Image]):
         # clear
@@ -110,11 +135,28 @@ class ImagesListFrame(tk.Frame):
                     values=ivalues,
                 )
 
+        # TODO: после запуска курсор установлен, но фокуса нет, реакции на клавиатуру нет
+        # TODO: после удаления курсор перескакивает вначало что неудобно
+        children = self._tree.get_children()
+        if children:
+            row = children[0]
+            self._tree.focus(row)
+            self._tree.selection_set(row)
+
+        # self._tree.focus_set()
+
     # def _select_row(self, e):
     #     print("select")
     #
-    # def _open_row(self, e):
-    #     print("open")
+    def _open_row(self, e):
+        print("open")
+        selected_items = self._tree.selection()  # ('sha256:d377bfc3671c1',)
+
+        if selected_items:
+
+            image_id = self._rows_map[selected_items[0]]
+            self._handler.show_image_info(image_id)
+
     #
     def _make_cmenu(self, e):
         cmenu_selection = self._tree.identify_row(e.y)  # тек. елемент под курсором
@@ -128,16 +170,27 @@ class ImagesListFrame(tk.Frame):
     # def _show_info(self):
     #     print("show info")
     #
+
     def _show_remove(self):
-        print("show remove")
         selected_items = self._tree.selection()  # ('sha256:d377bfc3671c1',)
-        print(selected_items)
+
+        if selected_items:
+
+            image_id = self._rows_map[selected_items[0]]
+
+            self._handler.remove_image(image_id, False)
+        else:
+            print("no image selected")
+
+    def _show_remove_force(self):
+        selected_items = self._tree.selection()  # ('sha256:d377bfc3671c1',)
 
         if selected_items:
             image_id = self._rows_map[selected_items[0]]
-            self._on_remove(image_id, True)
 
-    #
+            self._handler.remove_image(image_id, True)
+        else:
+            print("no image selected")
 
 
 """
@@ -175,73 +228,4 @@ func ShortImageID(id string) string {
 
 
 
-const (
-	ONE_KB = 1024
-	//  ONE_KB_BI = BigInteger.valueOf(1024L);
-	ONE_MB = 1048576
-	//   public static final BigInteger ONE_MB_BI;
-	ONE_GB = 1073741824
-	//   public static final BigInteger ONE_GB_BI;
-	ONE_TB = 1099511627776
-	//public static final BigInteger ONE_TB_BI;
-	ONE_PB = 1125899906842624
-	//public static final BigInteger ONE_PB_BI;
-	ONE_EB = 1152921504606846976
-	//public static final BigInteger ONE_EB_BI;
-	// public static final BigInteger ONE_ZB;
-	// public static final BigInteger ONE_YB;
-)
-
-func ByteCountToDisplaySize(size int64) string {
-
-	// try_eb := size / ONE_EB
-	// if try_eb > 0 {
-	// 	return fmt.Sprintf("%d EB", try_eb)
-	// }
-
-	// try_pb := size / ONE_PB
-	// if try_pb > 0 {
-	// 	return fmt.Sprintf("%d PB", try_pb)
-	// }
-
-	// try_tb := size / ONE_TB
-	// if try_tb > 0 {
-	// 	return fmt.Sprintf("%d TB", try_tb)
-	// }
-
-	try_gb := size / ONE_GB
-	if try_gb > 0 {
-		return fmt.Sprintf("%d GB", try_gb)
-	}
-
-	try_mb := size / ONE_MB
-	if try_mb > 0 {
-		return fmt.Sprintf("%d MB", try_mb)
-	}
-
-	try_kb := size / ONE_KB
-	if try_kb > 0 {
-		return fmt.Sprintf("%d KB", try_kb)
-	}
-
-	// Objects.requireNonNull(size, "size");
-	// String displaySize;
-	// if (size.divide(ONE_EB_BI).compareTo(BigInteger.ZERO) > 0) {
-	//    displaySize = size.divide(ONE_EB_BI) + " EB";
-	// } else if (size.divide(ONE_PB_BI).compareTo(BigInteger.ZERO) > 0) {
-	//    displaySize = size.divide(ONE_PB_BI) + " PB";
-	// } else if (size.divide(ONE_TB_BI).compareTo(BigInteger.ZERO) > 0) {
-	//    displaySize = size.divide(ONE_TB_BI) + " TB";
-	// } else if (size.divide(ONE_GB_BI).compareTo(BigInteger.ZERO) > 0) {
-	//    displaySize = size.divide(ONE_GB_BI) + " GB";
-	// } else if (size.divide(ONE_MB_BI).compareTo(BigInteger.ZERO) > 0) {
-	//    displaySize = size.divide(ONE_MB_BI) + " MB";
-	// } else if (size.divide(ONE_KB_BI).compareTo(BigInteger.ZERO) > 0) {
-	//    displaySize = size.divide(ONE_KB_BI) + " KB";
-	// } else {
-	//    displaySize = size + " bytes";
-	// }
-
-	return fmt.Sprintf("%d bytes", size)
-}
 """

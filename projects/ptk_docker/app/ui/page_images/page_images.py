@@ -1,12 +1,14 @@
 import tkinter as tk
+from tkinter import messagebox
 
 from docker import DockerClient
 
 from app.domain.image import Image
-from app.ui.page_images.images_list_frame import ImagesListFrame
+from app.ui.page_images.images_list_frame import (ImagesListFrame,
+                                                  ImagesListHandler)
 
 
-class PageImages(tk.Frame):
+class PageImages(tk.Frame, ImagesListHandler):
     def __init__(self, parent, docker: DockerClient, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
@@ -17,7 +19,7 @@ class PageImages(tk.Frame):
         # tree
         self._tree_frame = ImagesListFrame(
             self,
-            on_remove=self._do_remove,
+            handler=self,
         )
         self._tree_frame.pack(expand=True, fill="both")
 
@@ -33,6 +35,10 @@ class PageImages(tk.Frame):
         self._stat_label = tk.Label(
             self._controls_bar, textvariable=self._stat_variable
         ).pack(side="left")
+
+        tk.Label(self._controls_bar, text="[d - remove], [D - force remove]").pack(
+            side="left"
+        )
 
         # start
         self._refresh()
@@ -59,6 +65,20 @@ class PageImages(tk.Frame):
             created=img.attrs.get("Created", ""),
         )
 
-    def _do_remove(self, uid: str, force: bool = False):
-        self._docker.images.remove(uid, force)
-        self._refresh()
+    # images handler interface ------------------------------------------------
+    def remove_image(self, uid: str, force: bool):
+        msg = f"Force remove image {uid}?" if force else f"Remove image {uid}?"
+        result = messagebox.askquestion(
+            title="Confirmation",
+            message=msg,
+        )
+        if result == "yes":
+            try:
+                self._docker.images.remove(uid, force)
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+
+            self._refresh()
+
+    def show_image_info(self, uid: str):
+        print("show info for: ", uid)

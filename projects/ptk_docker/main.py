@@ -1,4 +1,6 @@
+#!/usr/bin/env python3
 import docker
+
 from app.main_window import MainWindow
 
 
